@@ -1846,6 +1846,111 @@
       order: 2 !important;
       max-width: 520px !important;
     }
+
+    /* GitHub Cloud Sync Indicator & Modal */
+    .sync-status-dot {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #94a3b8;
+      border: 2px solid var(--bg-surface);
+      transition: background 0.25s ease, transform 0.25s ease;
+    }
+
+    .sync-status-dot.synced {
+      background: #10b981;
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.7);
+    }
+
+    .sync-status-dot.pending {
+      background: #f59e0b;
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.7);
+    }
+
+    .sync-status-dot.syncing {
+      background: #6366f1;
+      animation: pulseSyncDot 1s infinite ease-in-out;
+    }
+
+    .sync-status-dot.error {
+      background: #f43f5e;
+      box-shadow: 0 0 8px rgba(244, 63, 94, 0.7);
+    }
+
+    @keyframes pulseSyncDot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.35); opacity: 0.65; }
+    }
+
+    .sync-status-card {
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 0.85rem 1rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      font-size: 0.84rem;
+      line-height: 1.45;
+      color: var(--text-secondary);
+    }
+
+    .sync-status-card strong {
+      color: var(--text-main);
+      display: block;
+      margin-bottom: 0.15rem;
+    }
+
+    .sync-help-details {
+      background: var(--bg-input);
+      border: 1px dashed var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 0.7rem 0.9rem;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .sync-help-details summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--primary);
+      user-select: none;
+    }
+
+    .sync-help-details ol {
+      margin: 0.55rem 0 0 1.15rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .sync-btn-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-secondary-outline {
+      padding: 0.58rem 0.9rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-input);
+      color: var(--text-main);
+      font-size: 0.84rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: var(--transition-smooth);
+    }
+
+    .btn-secondary-outline:hover {
+      background: var(--bg-input-hover);
+      border-color: var(--border-highlight);
+    }
   </style>
 </head>
 <body>
@@ -1939,6 +2044,16 @@
           <button class="mode-pill-btn admin-active" id="modeToggleBtn" onclick="handleModeToggleClick()" title="Toggle Admin / Visitor Mode">
             <span class="mode-indicator-dot"></span>
             <span id="modeToggleText">Admin Mode</span>
+          </button>
+
+          <!-- GitHub Cloud Sync Button (Visible only in Admin Mode) -->
+          <button class="icon-btn admin-only" id="githubSyncBtn" onclick="openGithubSyncModal()" title="GitHub Live Sync & Export (Publish apps for all visitors)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
+              <polyline points="12 12 12 18"></polyline>
+              <polyline points="9 15 12 12 15 15"></polyline>
+            </svg>
+            <span class="sync-status-dot" id="syncStatusDot"></span>
           </button>
 
           <!-- Store Settings / Branding Button (Visible only in Admin Mode) -->
@@ -2423,6 +2538,117 @@
     </div>
   </div>
 
+  <!-- GitHub Cloud Sync & Export Modal -->
+  <div class="modal-overlay" id="githubSyncModalOverlay" onclick="handleGithubSyncOverlayClick(event)">
+    <div class="modal-dialog" style="max-width: 520px;">
+      <div class="modal-header">
+        <h2 class="modal-title" style="display: flex; align-items: center; gap: 0.55rem; font-size: 1.15rem;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #6366f1;">
+            <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
+            <polyline points="12 12 12 18"></polyline>
+            <polyline points="9 15 12 12 15 15"></polyline>
+          </svg>
+          GitHub Live Sync &amp; Export
+        </h2>
+        <button class="modal-close-btn" onclick="closeGithubSyncModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <form id="githubSyncForm" onsubmit="handleSaveAndPublishGithub(event)">
+        <div class="modal-body" style="padding: 1.35rem 1.65rem; display: flex; flex-direction: column; gap: 1rem;">
+          <div class="sync-status-card" id="githubSyncStatusBox">
+            <span id="githubSyncStatusIcon" style="font-size: 1.2rem; line-height: 1;">☁️</span>
+            <div>
+              <strong id="githubSyncStatusTitle">GitHub Auto-Sync Not Configured</strong>
+              <span id="githubSyncStatusDesc">Connect your GitHub repository so every app you add or edit automatically publishes to <code>store-data.json</code> for all visitors.</span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="ghRepoInput">GitHub Repository (owner/repo) *</label>
+              <input type="text" id="ghRepoInput" class="form-input" placeholder="e.g. hashim/app-store" autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="ghBranchInput">Branch</label>
+              <input type="text" id="ghBranchInput" class="form-input" placeholder="main" value="main" autocomplete="off">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="ghPathInput">Data File Path in Repo</label>
+            <input type="text" id="ghPathInput" class="form-input" placeholder="store-data.json" value="store-data.json" autocomplete="off">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="ghTokenInput">GitHub Personal Access Token (Stored only in your browser)</label>
+            <div style="position: relative;">
+              <input
+                type="password"
+                id="ghTokenInput"
+                class="form-input"
+                placeholder="ghp_... or github_pat_..."
+                style="width: 100%; padding-right: 2.75rem;"
+                autocomplete="off"
+              >
+              <button
+                type="button"
+                onclick="togglePasswordVisibility('ghTokenInput', this)"
+                style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); padding: 4px;"
+                title="Show/Hide token"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <details class="sync-help-details">
+            <summary>How to get a GitHub Token (1-minute setup)</summary>
+            <ol>
+              <li>Open <strong>GitHub.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens</strong>.</li>
+              <li>Click <strong>Generate new token</strong>, select your website repository under <strong>Repository access</strong>.</li>
+              <li>Under <strong>Permissions → Repository permissions</strong>, set <strong>Contents</strong> to <strong>Read and write</strong>, then generate &amp; paste it above.</li>
+              <li>Your token is saved <strong>only on your own device</strong> (never uploaded to GitHub).</li>
+            </ol>
+          </details>
+
+          <div class="sync-btn-row">
+            <button type="button" class="btn-secondary-outline" onclick="downloadStoreDataJson()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              Download store-data.json
+            </button>
+            <button type="button" class="btn-secondary-outline" onclick="pullLatestFromRemote(true)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+              </svg>
+              Reload Live Data
+            </button>
+            <button type="button" class="btn-secondary-outline" id="ghDisconnectBtn" style="color: #f43f5e; display: none;" onclick="disconnectGithubSync()">
+              Disconnect Token
+            </button>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="justify-content: flex-end;">
+          <button type="button" class="btn-modal-cancel" onclick="closeGithubSyncModal()">Close</button>
+          <button type="submit" class="btn-modal-save" id="ghSavePublishBtn">Save &amp; Publish to GitHub</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer"></div>
 
@@ -2507,6 +2733,10 @@
     const STORAGE_KEY_BRAND = "nova_appstore_brand";
     const STORAGE_KEY_PASSWORD = "nova_appstore_admin_password";
     const STORAGE_KEY_DEVICE_VIEW = "nova_appstore_device_view";
+    const STORAGE_KEY_GH_CONFIG = "nova_appstore_github_sync_v1";
+    const STORAGE_KEY_UNPUBLISHED = "nova_appstore_unpublished_v1";
+    const STORAGE_KEY_LAST_PUSHED_AT = "nova_appstore_last_pushed_at_v1";
+    const STORAGE_KEY_UPDATED_AT = "nova_appstore_updated_at_v1";
     const DEFAULT_ADMIN_PASSWORD = "adminhashim123";
 
     // App State
@@ -2516,6 +2746,8 @@
     let pendingDeleteAppId = null;
     let currentIconMode = "url";
     let isPhoneFrameMode = false;
+    let isGithubSyncing = false;
+    let lastSyncError = "";
 
     // Temporary Branding settings state during modal editing
     let tempBrandSettings = {
@@ -2536,7 +2768,21 @@
       checkVisitorUrlParam();
       loadApps();
       setupSearch();
+      preserveLegacyAdminEdits();
+      updateSyncIndicator();
+      syncFromRemoteStoreData();
     });
+
+    function preserveLegacyAdminEdits() {
+      if (isVisitorMode) return;
+      if (localStorage.getItem(STORAGE_KEY_UPDATED_AT)) return;
+      if (localStorage.getItem(STORAGE_KEY_UNPUBLISHED) === "true") return;
+      try {
+        if (JSON.stringify(apps) !== JSON.stringify(DEFAULT_APPS)) {
+          localStorage.setItem(STORAGE_KEY_UNPUBLISHED, "true");
+        }
+      } catch (_) {}
+    }
 
     // -------------------------------------------------------------
     // Device Viewport Auto-detection & Switcher (Mobile/Desktop)
@@ -2954,6 +3200,7 @@
       applyBrandSettings(tempBrandSettings);
       closeStoreSettingsModal();
       showToast("Store settings saved successfully! ✨");
+      onStoreDataMutated("Update store branding");
     }
 
     function resetStoreBranding() {
@@ -2969,6 +3216,7 @@
         applyBrandSettings(tempBrandSettings);
         closeStoreSettingsModal();
         showToast("Branding reset to default!");
+        onStoreDataMutated("Reset store branding");
       }
     }
 
@@ -3290,6 +3538,7 @@
       saveAppsToStorage();
       renderApps();
       closeModal();
+      onStoreDataMutated(id ? `Update app: ${name}` : `Add app: ${name}`);
     }
 
     // -------------------------------------------------------------
@@ -3318,6 +3567,7 @@
       renderApps();
       closeDeleteModal();
       showToast(`"${name}" deleted.`);
+      onStoreDataMutated(`Delete app: ${name}`);
     }
 
     function resetDemoApps() {
@@ -3326,6 +3576,7 @@
         saveAppsToStorage();
         renderApps();
         showToast("Sample apps restored!");
+        onStoreDataMutated("Restore sample apps");
       }
     }
 
@@ -3597,8 +3848,465 @@
         if (e.newValue) {
           setTheme(e.newValue);
         }
+      } else if (e.key === STORAGE_KEY_UNPUBLISHED || e.key === STORAGE_KEY_GH_CONFIG) {
+        updateSyncIndicator();
       }
     });
+
+    // -------------------------------------------------------------
+    // GitHub Repo Sync & Shared store-data.json Persistence
+    // -------------------------------------------------------------
+    function detectDefaultGithubConfig() {
+      const host = window.location.hostname || "";
+      let repo = "";
+      if (host.endsWith(".github.io")) {
+        const owner = host.replace(".github.io", "");
+        const parts = (window.location.pathname || "/").split("/").filter(Boolean);
+        // If deployed at username.github.io/repo-name/, parts[0] is repo-name
+        const repoName = (parts.length > 0 && !parts[0].includes(".")) ? parts[0] : `${owner}.github.io`;
+        repo = `${owner}/${repoName}`;
+      }
+      return {
+        repo,
+        branch: "main",
+        path: "store-data.json",
+        token: ""
+      };
+    }
+
+    function getGithubConfig() {
+      const defaults = detectDefaultGithubConfig();
+      const raw = localStorage.getItem(STORAGE_KEY_GH_CONFIG);
+      if (!raw) return defaults;
+      try {
+        const parsed = JSON.parse(raw);
+        return {
+          repo: (parsed.repo || defaults.repo || "").trim(),
+          branch: (parsed.branch || "main").trim(),
+          path: (parsed.path || "store-data.json").trim().replace(/^\/+/, ""),
+          token: (parsed.token || "").trim()
+        };
+      } catch (e) {
+        return defaults;
+      }
+    }
+
+    function saveGithubConfig(cfg) {
+      localStorage.setItem(STORAGE_KEY_GH_CONFIG, JSON.stringify({
+        repo: (cfg.repo || "").trim(),
+        branch: (cfg.branch || "main").trim() || "main",
+        path: (cfg.path || "store-data.json").trim().replace(/^\/+/, "") || "store-data.json",
+        token: (cfg.token || "").trim()
+      }));
+      updateSyncIndicator();
+    }
+
+    function utf8ToBase64(str) {
+      const bytes = new TextEncoder().encode(str);
+      let binary = "";
+      const chunkSize = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+      }
+      return btoa(binary);
+    }
+
+    function base64ToUtf8(b64) {
+      const clean = (b64 || "").replace(/\s+/g, "");
+      const binary = atob(clean);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return new TextDecoder().decode(bytes);
+    }
+
+    function buildStorePayload(timestamp) {
+      return {
+        updatedAt: timestamp || new Date().toISOString(),
+        brand: tempBrandSettings,
+        apps: apps
+      };
+    }
+
+    function applyRemoteStorePayload(data) {
+      if (!data || !Array.isArray(data.apps)) return false;
+
+      apps = data.apps;
+      saveAppsToStorage();
+
+      if (data.brand && typeof data.brand === "object") {
+        tempBrandSettings = { ...tempBrandSettings, ...data.brand };
+        localStorage.setItem(STORAGE_KEY_BRAND, JSON.stringify(tempBrandSettings));
+        applyBrandSettings(tempBrandSettings);
+      }
+
+      if (data.updatedAt) {
+        localStorage.setItem(STORAGE_KEY_UPDATED_AT, data.updatedAt);
+      }
+
+      localStorage.removeItem(STORAGE_KEY_UNPUBLISHED);
+      renderApps();
+      updateSyncIndicator();
+      return true;
+    }
+
+    async function syncFromRemoteStoreData() {
+      // Skip fetch when opened directly via file:// to avoid browser CORS errors
+      if (window.location.protocol === "file:") return;
+
+      const cfg = getGithubConfig();
+      const dataUrl = (cfg.path || "store-data.json") + "?t=" + Date.now();
+
+      try {
+        const res = await fetch(dataUrl, { cache: "no-store" });
+        if (!res.ok) return;
+
+        const data = await res.json();
+        if (!data || !Array.isArray(data.apps)) return;
+
+        const isUnpublished = localStorage.getItem(STORAGE_KEY_UNPUBLISHED) === "true";
+        const lastPushedAt = localStorage.getItem(STORAGE_KEY_LAST_PUSHED_AT);
+        const remoteTime = data.updatedAt ? Date.parse(data.updatedAt) : 0;
+
+        // Protect admin's just-pushed data while GitHub Pages CDN finishes rebuilding (~10 min window)
+        if (lastPushedAt) {
+          const pushedTime = Date.parse(lastPushedAt);
+          if (!Number.isNaN(pushedTime)) {
+            if (remoteTime >= pushedTime) {
+              localStorage.removeItem(STORAGE_KEY_LAST_PUSHED_AT);
+            } else if (Date.now() - pushedTime < 10 * 60 * 1000) {
+              updateSyncIndicator();
+              return;
+            }
+          }
+        }
+
+        // Preserve admin's unpublished local edits unless currently viewing as visitor
+        if (!isVisitorMode && isUnpublished) {
+          updateSyncIndicator();
+          return;
+        }
+
+        applyRemoteStorePayload(data);
+      } catch (err) {
+        console.warn("Could not load store-data.json:", err);
+      }
+    }
+
+    function onStoreDataMutated(commitReason) {
+      const nowIso = new Date().toISOString();
+      localStorage.setItem(STORAGE_KEY_UPDATED_AT, nowIso);
+
+      const cfg = getGithubConfig();
+      if (cfg.repo && cfg.token) {
+        pushStoreDataToGitHub(commitReason, nowIso);
+      } else {
+        localStorage.setItem(STORAGE_KEY_UNPUBLISHED, "true");
+        lastSyncError = "";
+        updateSyncIndicator();
+        showToast("Saved locally! Open Cloud Sync (☁️) in header to publish for everyone.", "warning");
+      }
+    }
+
+    async function fetchGithubFileInfo(cfg) {
+      const encodedPath = cfg.path.split("/").map(encodeURIComponent).join("/");
+      const apiUrl = `https://api.github.com/repos/${cfg.repo}/contents/${encodedPath}?ref=${encodeURIComponent(cfg.branch)}`;
+      const res = await fetch(apiUrl, {
+        cache: "no-store",
+        headers: {
+          "Authorization": `Bearer ${cfg.token}`,
+          "Accept": "application/vnd.github+json"
+        }
+      });
+
+      if (res.status === 404) {
+        return { exists: false, sha: null, content: null };
+      }
+
+      if (!res.ok) {
+        let msg = `GitHub API error (${res.status})`;
+        try {
+          const errJson = await res.json();
+          if (errJson && errJson.message) msg = errJson.message;
+        } catch (_) {}
+        throw new Error(msg);
+      }
+
+      const json = await res.json();
+      return { exists: true, sha: json.sha, content: json.content };
+    }
+
+    async function pushStoreDataToGitHub(commitReason = "Update apps from Admin Panel", timestampOverride = null) {
+      const cfg = getGithubConfig();
+      if (!cfg.repo || !cfg.token) {
+        localStorage.setItem(STORAGE_KEY_UNPUBLISHED, "true");
+        updateSyncIndicator();
+        return false;
+      }
+
+      if (!/^[^/\s]+\/[^/\s]+$/.test(cfg.repo)) {
+        lastSyncError = "Invalid repository format. Use owner/repo.";
+        localStorage.setItem(STORAGE_KEY_UNPUBLISHED, "true");
+        updateSyncIndicator();
+        showToast("⚠️ " + lastSyncError, "warning");
+        return false;
+      }
+
+      isGithubSyncing = true;
+      lastSyncError = "";
+      updateSyncIndicator();
+
+      const syncTime = timestampOverride || new Date().toISOString();
+      const payloadStr = JSON.stringify(buildStorePayload(syncTime), null, 2) + "\n";
+      const encodedContent = utf8ToBase64(payloadStr);
+      const encodedPath = cfg.path.split("/").map(encodeURIComponent).join("/");
+      const putUrl = `https://api.github.com/repos/${cfg.repo}/contents/${encodedPath}`;
+
+      try {
+        let fileInfo = await fetchGithubFileInfo(cfg);
+
+        const doPut = async (sha) => {
+          const body = {
+            message: `${commitReason} (${syncTime})`,
+            content: encodedContent,
+            branch: cfg.branch
+          };
+          if (sha) body.sha = sha;
+
+          return fetch(putUrl, {
+            method: "PUT",
+            headers: {
+              "Authorization": `Bearer ${cfg.token}`,
+              "Accept": "application/vnd.github+json",
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body)
+          });
+        };
+
+        let putRes = await doPut(fileInfo.sha);
+
+        // Retry once on 409 SHA conflict
+        if (putRes.status === 409) {
+          fileInfo = await fetchGithubFileInfo(cfg);
+          putRes = await doPut(fileInfo.sha);
+        }
+
+        if (!putRes.ok) {
+          let msg = `GitHub sync failed (${putRes.status})`;
+          try {
+            const errJson = await putRes.json();
+            if (errJson && errJson.message) msg = errJson.message;
+          } catch (_) {}
+          throw new Error(msg);
+        }
+
+        localStorage.setItem(STORAGE_KEY_UPDATED_AT, syncTime);
+        localStorage.setItem(STORAGE_KEY_LAST_PUSHED_AT, syncTime);
+        localStorage.removeItem(STORAGE_KEY_UNPUBLISHED);
+        isGithubSyncing = false;
+        lastSyncError = "";
+        updateSyncIndicator();
+        showToast("Published to GitHub! Live for everyone in ~30s 🚀");
+        return true;
+      } catch (err) {
+        console.error("GitHub Sync Error:", err);
+        isGithubSyncing = false;
+        lastSyncError = err.message || "Sync failed";
+        localStorage.setItem(STORAGE_KEY_UNPUBLISHED, "true");
+        updateSyncIndicator();
+        showToast("⚠️ GitHub sync failed: " + lastSyncError, "warning");
+        return false;
+      }
+    }
+
+    async function pullLatestFromRemote(showFeedback = false) {
+      const cfg = getGithubConfig();
+      try {
+        if (cfg.repo && cfg.token) {
+          const fileInfo = await fetchGithubFileInfo(cfg);
+          if (fileInfo.exists && fileInfo.content) {
+            const decoded = base64ToUtf8(fileInfo.content);
+            const parsed = JSON.parse(decoded);
+            if (applyRemoteStorePayload(parsed)) {
+              localStorage.removeItem(STORAGE_KEY_LAST_PUSHED_AT);
+              if (showFeedback) showToast("Loaded latest data directly from GitHub! 🔄");
+              return true;
+            }
+          }
+        }
+
+        if (window.location.protocol !== "file:") {
+          const res = await fetch((cfg.path || "store-data.json") + "?t=" + Date.now(), { cache: "no-store" });
+          if (res.ok) {
+            const data = await res.json();
+            if (applyRemoteStorePayload(data)) {
+              localStorage.removeItem(STORAGE_KEY_LAST_PUSHED_AT);
+              if (showFeedback) showToast("Reloaded live store-data.json! 🔄");
+              return true;
+            }
+          }
+        }
+
+        if (showFeedback) showToast("⚠️ Could not fetch store-data.json yet.", "warning");
+      } catch (err) {
+        console.error(err);
+        if (showFeedback) showToast("⚠️ Reload failed: " + err.message, "warning");
+      }
+      return false;
+    }
+
+    function downloadStoreDataJson() {
+      const payloadStr = JSON.stringify(buildStorePayload(), null, 2) + "\n";
+      const blob = new Blob([payloadStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "store-data.json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast("store-data.json downloaded! Upload it to your GitHub repo.");
+    }
+
+    function updateSyncIndicator() {
+      const dot = document.getElementById("syncStatusDot");
+      const btn = document.getElementById("githubSyncBtn");
+      const statusIcon = document.getElementById("githubSyncStatusIcon");
+      const statusTitle = document.getElementById("githubSyncStatusTitle");
+      const statusDesc = document.getElementById("githubSyncStatusDesc");
+      const disconnectBtn = document.getElementById("ghDisconnectBtn");
+
+      const cfg = getGithubConfig();
+      const isConfigured = Boolean(cfg.repo && cfg.token);
+      const isUnpublished = localStorage.getItem(STORAGE_KEY_UNPUBLISHED) === "true";
+
+      if (disconnectBtn) {
+        disconnectBtn.style.display = isConfigured ? "inline-flex" : "none";
+      }
+
+      if (dot) {
+        dot.classList.remove("synced", "pending", "syncing", "error");
+        if (isGithubSyncing) {
+          dot.classList.add("syncing");
+        } else if (lastSyncError) {
+          dot.classList.add("error");
+        } else if (isUnpublished) {
+          dot.classList.add("pending");
+        } else if (isConfigured) {
+          dot.classList.add("synced");
+        }
+      }
+
+      if (btn) {
+        if (isGithubSyncing) {
+          btn.title = "Syncing changes to GitHub...";
+        } else if (lastSyncError) {
+          btn.title = "GitHub Sync Error: " + lastSyncError;
+        } else if (isUnpublished) {
+          btn.title = "Unpublished local changes — Click to publish to GitHub";
+        } else if (isConfigured) {
+          btn.title = `GitHub Sync Connected (${cfg.repo})`;
+        } else {
+          btn.title = "GitHub Live Sync & Export (Click to configure)";
+        }
+      }
+
+      if (statusIcon && statusTitle && statusDesc) {
+        if (isGithubSyncing) {
+          statusIcon.textContent = "⏳";
+          statusTitle.textContent = "Publishing to GitHub...";
+          statusDesc.textContent = `Updating ${cfg.path} in ${cfg.repo} (${cfg.branch})...`;
+        } else if (lastSyncError) {
+          statusIcon.textContent = "⚠️";
+          statusTitle.textContent = "Last Sync Failed";
+          statusDesc.textContent = lastSyncError;
+        } else if (isUnpublished && isConfigured) {
+          statusIcon.textContent = "🟡";
+          statusTitle.textContent = "Unpublished Local Changes";
+          statusDesc.textContent = "Click 'Save & Publish to GitHub' to push your latest apps for all visitors.";
+        } else if (isUnpublished) {
+          statusIcon.textContent = "🟡";
+          statusTitle.textContent = "Saved Locally Only (Not Live Yet)";
+          statusDesc.textContent = "Connect your GitHub Token below OR download store-data.json and upload it to GitHub so everyone can see your changes.";
+        } else if (isConfigured) {
+          statusIcon.textContent = "✅";
+          statusTitle.textContent = `Auto-Sync Active (${cfg.repo})`;
+          statusDesc.textContent = "Any app you add, edit, or delete automatically updates store-data.json on GitHub for all visitors.";
+        } else {
+          statusIcon.textContent = "☁️";
+          statusTitle.textContent = "GitHub Auto-Sync Not Configured";
+          statusDesc.textContent = "Connect your GitHub repository so every app you add or edit automatically publishes to store-data.json for all visitors.";
+        }
+      }
+    }
+
+    function openGithubSyncModal() {
+      const cfg = getGithubConfig();
+      document.getElementById("ghRepoInput").value = cfg.repo || "";
+      document.getElementById("ghBranchInput").value = cfg.branch || "main";
+      document.getElementById("ghPathInput").value = cfg.path || "store-data.json";
+      document.getElementById("ghTokenInput").value = cfg.token || "";
+      updateSyncIndicator();
+      document.getElementById("githubSyncModalOverlay").classList.add("open");
+    }
+
+    function closeGithubSyncModal() {
+      document.getElementById("githubSyncModalOverlay").classList.remove("open");
+    }
+
+    function handleGithubSyncOverlayClick(e) {
+      if (e.target.id === "githubSyncModalOverlay") {
+        closeGithubSyncModal();
+      }
+    }
+
+    async function handleSaveAndPublishGithub(e) {
+      if (e) e.preventDefault();
+
+      const repo = document.getElementById("ghRepoInput").value.trim();
+      const branch = document.getElementById("ghBranchInput").value.trim() || "main";
+      const path = document.getElementById("ghPathInput").value.trim().replace(/^\/+/, "") || "store-data.json";
+      const token = document.getElementById("ghTokenInput").value.trim();
+
+      if (!repo || !token) {
+        showToast("⚠️ Please enter both Repository (owner/repo) and GitHub Token!", "warning");
+        return;
+      }
+
+      saveGithubConfig({ repo, branch, path, token });
+
+      const btn = document.getElementById("ghSavePublishBtn");
+      const oldText = btn ? btn.textContent : "";
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Publishing...";
+      }
+
+      const ok = await pushStoreDataToGitHub("Publish store apps via Admin Panel");
+
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = oldText;
+      }
+
+      if (ok) {
+        closeGithubSyncModal();
+      }
+    }
+
+    function disconnectGithubSync() {
+      if (confirm("Remove saved GitHub Token from this browser?")) {
+        const cfg = getGithubConfig();
+        saveGithubConfig({ ...cfg, token: "" });
+        document.getElementById("ghTokenInput").value = "";
+        lastSyncError = "";
+        updateSyncIndicator();
+        showToast("GitHub Token removed from this browser.");
+      }
+    }
   </script>
 </body>
 </html>

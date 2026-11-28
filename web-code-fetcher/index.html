@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light" />
+<link rel="icon" href="data:," />
+<title>HASHIM Web Code Fetcher</title>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<style>
+:root{
+  --primary-color:#007bff;
+  --success-color:#28a745;
+  --warning-color:#ffc107;
+  --info-color:#17a2b8;
+  --secondary-color:#6c757d;
+  --background-light:#f4f6f9;
+  --card-background:#ffffff;
+  --text-dark:#212529;
+  --border-light:#e9ecef;
+}
+*{font-family:'Poppins',sans-serif;box-sizing:border-box;color:var(--text-dark)}
+body{background-color:var(--background-light);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:24px 14px 36px;margin:0}
+.card-theme{background-color:var(--card-background);border-radius:20px;box-shadow:0 15px 45px rgba(0,0,0,.08);border:1px solid var(--border-light);width:100%;max-width:800px}
+.input-theme{border:1px solid var(--border-light)!important;border-radius:12px!important;background-color:var(--background-light)!important;min-height:50px;transition:all .3s ease;width:100%;padding:10px 15px;font-size:1rem;outline:none}
+.input-theme:focus{border-color:var(--primary-color)!important;box-shadow:0 0 0 4px rgba(0,123,255,.25)!important;background-color:#fff!important}
+.btn-theme{border:none;border-radius:12px!important;font-weight:600!important;box-shadow:0 4px 10px rgba(0,0,0,.1)!important;transition:all .3s ease;font-size:1rem!important;min-height:50px;display:flex;align-items:center;justify-content:center;cursor:pointer;width:100%;color:#fff!important;padding:10px 12px;text-align:center}
+.btn-theme:active{transform:scale(.98)}
+.btn-primary{background-color:var(--primary-color)!important}
+.btn-secondary{background-color:var(--secondary-color)!important}
+.btn-success{background-color:var(--success-color)!important}
+.btn-warning{background-color:var(--warning-color)!important;color:var(--text-dark)!important}
+.btn-info{background-color:var(--info-color)!important}
+.bungee-title{font-family:'Bungee',cursive;color:var(--primary-color);letter-spacing:2px;line-height:1.15}
+#centralToast{position:fixed;bottom:20px;left:50%;transform:translate(-50%,120%) scale(.9);width:min(350px,92vw);background-color:var(--card-background);padding:20px;border-radius:15px;box-shadow:0 15px 45px rgba(0,0,0,.2);z-index:2000;opacity:0;visibility:hidden;transition:all .4s ease;text-align:center}
+#centralToast.show{opacity:1;visibility:visible;transform:translate(-50%,0) scale(1)}
+#centralToast .toast-icon{font-size:2rem;margin-bottom:6px;display:block}
+#previewModal{display:none;position:fixed;inset:0;background-color:rgba(33,37,41,.92);align-items:center;justify-content:center;z-index:1000;padding:12px}
+#previewModal.flex{display:flex}
+#previewModal .modal-content{background-color:#fff;padding:18px;border-radius:20px;width:100%;max-width:920px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+#previewIframe{height:52vh;min-height:320px;border:1px solid var(--border-light);border-radius:12px;background-color:#fff;display:block;width:100%}
+.social-button{min-height:44px}
+.quick-urls{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.quick-urls button{border:1px solid var(--border-light);background:#fff;border-radius:999px;padding:8px 14px;font-size:.82rem;font-weight:600;cursor:pointer;min-height:38px;color:var(--primary-color)}
+.quick-urls button:active{transform:scale(.97)}
+.stats-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.stat{flex:1;min-width:110px;background:var(--background-light);border:1px solid var(--border-light);border-radius:12px;padding:10px;text-align:center}
+.stat b{display:block;font-size:1.05rem;color:var(--primary-color)}
+.stat span{font-size:.75rem;color:var(--secondary-color)}
+#channelPopup{display:none;position:fixed;inset:0;background-color:rgba(4,10,18,.78);align-items:center;justify-content:center;z-index:3000;padding:16px}
+#channelPopup.show{display:flex}
+#channelPopup .popup-card{position:relative;width:100%;max-width:400px;background:linear-gradient(165deg,#12233a 0%,#0a1424 55%,#081120 100%);border:1px solid rgba(37,211,102,.35);border-radius:28px;padding:38px 26px 30px;text-align:center;box-shadow:0 30px 70px rgba(0,0,0,.55)}
+#channelPopup .popup-close{position:absolute;top:14px;right:14px;width:38px;height:38px;border:none;border-radius:50%;background:rgba(255,255,255,.08);color:#cbd5e1;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#channelPopup .popup-close:active{transform:scale(.94)}
+#channelPopup .popup-icon{width:84px;height:84px;margin:0 auto 20px;border-radius:22px;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.35);display:flex;align-items:center;justify-content:center}
+#channelPopup .popup-icon i{font-size:2.6rem;color:#25d366}
+#channelPopup h3{color:#fff;font-size:1.55rem;font-weight:700;line-height:1.3;margin:0 0 12px}
+#channelPopup .popup-text{color:#9fb0c3;font-size:.98rem;line-height:1.6;margin:0 0 26px}
+#channelPopup .popup-join{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:56px;background:#22e07a;border-radius:16px;color:#052e16;font-weight:700;font-size:1.05rem;letter-spacing:.4px;text-decoration:none;box-shadow:0 12px 28px rgba(34,224,122,.35)}
+#channelPopup .popup-join i{color:#052e16;font-size:1.3rem}
+#channelPopup .popup-join:active{transform:scale(.98)}
+#channelPopup .popup-later{display:block;margin:20px auto 0;background:none;border:none;color:#8b98a9;font-weight:600;letter-spacing:2.5px;font-size:.85rem;cursor:pointer;padding:6px 10px}
+#channelPopup .popup-later:active{transform:scale(.97)}
+</style>
+</head>
+<body>
+
+<div id="centralToast" role="status" aria-live="polite">
+  <i id="toastIcon" class="toast-icon"></i>
+  <p id="toastTitle" style="font-weight:700;font-size:1.15rem;margin:0 0 4px"></p>
+  <p id="toastMessage" style="margin:0;color:var(--secondary-color)"></p>
+</div>
+
+<div style="max-width:56rem;width:100%;margin:0 auto">
+  <header style="text-align:center;margin:18px 0 26px">
+    <h1 class="bungee-title" style="font-size:clamp(1.7rem,6vw,3.4rem);margin:0 0 8px">HASHIM Web Code Fetcher</h1>
+    <p style="color:var(--secondary-color);font-size:1.05rem;max-width:42rem;margin:0 auto">Get the full HTML source code of any website and preview it instantly.</p>
+    <p style="color:var(--secondary-color);font-size:.95rem;margin:8px 0 0">by <b style="color:var(--primary-color)">HASHIM</b></p>
+  </header>
+
+  <section class="card-theme" style="padding:26px">
+    <h2 style="font-size:1.2rem;font-weight:700;margin:0 0 14px">1. Enter Target URL</h2>
+    <input type="url" id="urlInput" inputmode="url" placeholder="Enter URL (e.g., https://example.com)" class="input-theme" />
+    <div class="quick-urls">
+      <button type="button" data-q="https://example.com">example.com</button>
+      <button type="button" data-q="https://en.wikipedia.org/wiki/Pakistan">Wikipedia — Pakistan</button>
+      <button type="button" data-q="https://www.google.com">google.com</button>
+    </div>
+    <div style="margin-top:20px">
+      <button onclick="fetchSourceCode()" id="scrapeBtn" class="btn-theme btn-primary">
+        <i class="fas fa-search" style="color:#fff;margin-right:8px"></i> Get Source &amp; Preview
+      </button>
+    </div>
+    <div class="stats-row" id="statsRow" style="display:none">
+      <div class="stat"><b id="statSize">—</b><span>Code size</span></div>
+      <div class="stat"><b id="statLines">—</b><span>Lines</span></div>
+      <div class="stat"><b id="statTime">—</b><span>Fetch time</span></div>
+    </div>
+    <p style="color:var(--secondary-color);font-size:.85rem;margin:16px 0 0">Tip: Press <b>Enter</b> in the box to fetch. If a site blocks fetching, try another URL — some sites refuse outside access.</p>
+  </section>
+
+  <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:12px;margin-top:26px">
+    <a href="https://whatsapp.com/channel/0029VbEJXwe002T7pTkUjG1C" target="_blank" rel="noopener" class="social-button" style="color:#fff;background:#22c55e;text-decoration:none;padding:10px 18px;border-radius:999px;display:inline-flex;align-items:center;box-shadow:0 8px 20px rgba(0,0,0,.15);font-weight:600">
+      <i class="fab fa-whatsapp" style="color:#fff;margin-right:8px;font-size:1.1rem"></i> HASHIM CYBER SECURITY EXPERT
+    </a>
+    <a href="https://whatsapp.com/channel/0029VbEJXwe002T7pTkUjG1C" target="_blank" rel="noopener" class="social-button" style="color:#fff;background:#3b82f6;text-decoration:none;padding:10px 18px;border-radius:999px;display:inline-flex;align-items:center;box-shadow:0 8px 20px rgba(0,0,0,.15);font-weight:600">
+      <i class="fab fa-whatsapp" style="color:#fff;margin-right:8px"></i> More Tools (Channel)
+    </a>
+  </div>
+
+  <div style="text-align:center;margin-top:28px;color:var(--secondary-color)">
+    <p style="margin:0">Developed by HASHIM · <a href="https://whatsapp.com/channel/0029VbEJXwe002T7pTkUjG1C" target="_blank" rel="noopener" style="color:var(--primary-color);font-weight:700;text-decoration:none">HASHIM CYBER SECURITY EXPERT</a></p>
+  </div>
+</div>
+
+<div id="channelPopup" role="dialog" aria-modal="true" aria-label="Join the WhatsApp channel">
+  <div class="popup-card">
+    <button type="button" class="popup-close" onclick="closeChannelPopup()" aria-label="Close popup"><i class="fas fa-times" style="color:#cbd5e1"></i></button>
+    <div class="popup-icon"><i class="fab fa-whatsapp"></i></div>
+    <h3>Join Our WhatsApp Community! 🚀</h3>
+    <p class="popup-text">Follow <b style="color:#e2e8f0">HASHIM CYBER SECURITY EXPERT</b> for cyber security tips, tools and updates — directly on your phone.</p>
+    <a class="popup-join" href="https://whatsapp.com/channel/0029VbEJXwe002T7pTkUjG1C" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> JOIN / FOLLOW NOW</a>
+    <button type="button" class="popup-later" onclick="closeChannelPopup()">MAYBE LATER</button>
+  </div>
+</div>
+
+<div id="previewModal">
+  <div class="modal-content">
+    <h3 style="font-size:1.4rem;font-weight:700;margin:0 0 6px;color:var(--primary-color)">Live Preview &amp; Code Viewer</h3>
+    <p id="modalUrl" style="color:var(--secondary-color);font-size:.85rem;word-break:break-all;margin:0 0 14px"></p>
+    <div style="margin-bottom:18px">
+      <iframe id="previewIframe" title="Fetched code live view" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px" class="modal-btns">
+      <button id="toggleViewBtn" onclick="toggleCodeView()" class="btn-theme btn-info"><i class="fas fa-code" style="color:#fff;margin-right:8px"></i> See Code</button>
+      <button onclick="copyOutput()" class="btn-theme btn-success"><i class="fas fa-copy" style="color:#fff;margin-right:8px"></i> Copy Code</button>
+      <button onclick="downloadCode()" class="btn-theme btn-warning"><i class="fas fa-download" style="margin-right:8px"></i> Download</button>
+      <button onclick="hideModal()" class="btn-theme btn-secondary"><i class="fas fa-arrow-left" style="color:#fff;margin-right:8px"></i> Back</button>
+    </div>
+    <input type="text" id="downloadFileName" placeholder="Custom file name (default: Scraped_By_HASHIM.html)" class="input-theme" style="margin-top:14px;min-height:44px;font-size:.9rem">
+  </div>
+</div>
+
+<script>
+let scrapedHTMLContent = '';
+let isCodeViewActive = false;
+const urlInput = document.getElementById('urlInput');
+const previewIframe = document.getElementById('previewIframe');
+const toggleViewBtn = document.getElementById('toggleViewBtn');
+
+function showToast(title, message, type) {
+  type = type || 'success';
+  const toast = document.getElementById('centralToast');
+  const icon = document.getElementById('toastIcon');
+  document.getElementById('toastTitle').textContent = title;
+  document.getElementById('toastMessage').textContent = message;
+  if (type === 'success') icon.className = 'toast-icon fas fa-check-circle'; icon.style.color = type==='success' ? '#28a745' : (type==='warning' ? '#d39e00' : '#dc3545');
+  if (type === 'warning') icon.className = 'toast-icon fas fa-exclamation-triangle';
+  if (type === 'error') icon.className = 'toast-icon fas fa-times-circle';
+  toast.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(function(){ toast.classList.remove('show'); }, 4000);
+}
+
+const loadingAnimationHTML = function(url){
+  return '<html><head><style>body{background:#2c3e50;color:#ecf0f1;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;padding:20px;text-align:center}.c{width:85%;max-width:400px}.h{font-size:1.4rem;font-weight:700;margin-bottom:20px;color:#3498db}.bar{background:#34495e;border-radius:50px;height:15px;width:100%;overflow:hidden;margin-bottom:10px}.fill{height:100%;background:#2ecc71;width:0;border-radius:50px;animation:p 3s ease-in-out infinite}@keyframes p{0%{width:0}50%{width:80%}100%{width:95%}}.s{font-size:.9rem;color:#95a5a6}.u{font-size:.8rem;color:#bdc3c7;word-break:break-all;margin-top:6px}</style></head><body><div class="c"><div class="h">Fetching Source Code…</div><div class="bar"><div class="fill"></div></div><div class="s">🌐 Establishing secure connection and parsing HTML…</div><div class="u"></div></div></body></html>';
+};
+
+function getCodeViewHTML(code){
+  const esc = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  return '<html><body style="background:#1e1e1e;color:#d4f5d4;font-family:monospace;font-size:12px;padding:14px;margin:0;white-space:pre-wrap;word-break:break-word"><pre style="margin:0;white-space:pre-wrap;word-break:break-word">' + esc + '</pre></body></html>';
+}
+
+function writeIframe(html){
+  const doc = previewIframe.contentDocument || (previewIframe.contentWindow && previewIframe.contentWindow.document);
+  if(!doc) return;
+  doc.open(); doc.write(html); doc.close();
+}
+function runCodeInIframe(code, isError){
+  if(isError){
+    writeIframe('<html><body style="font-family:sans-serif;text-align:center;padding:40px 20px;color:#dc3545;font-weight:600"><h3>Error Fetching Source Code</h3><p style="color:#555;font-weight:400;word-break:break-word">' + String(code).replace(/</g,'&lt;') + '</p><p style="color:#777;font-weight:400">Check the URL — this site may be blocking outside fetching. Try another site.</p></body></html>');
+  } else if(code){
+    writeIframe(code);
+  } else {
+    writeIframe('<html><body style="font-family:sans-serif;text-align:center;padding:50px;color:#6c757d"><h1>Live Preview Area</h1><p>Enter a URL and click Get Source &amp; Preview.</p></body></html>');
+  }
+  isCodeViewActive = false;
+}
+function showModal(){ document.getElementById('previewModal').classList.add('flex'); }
+function hideModal(){
+  document.getElementById('previewModal').classList.remove('flex');
+  toggleViewBtn.innerHTML = '<i class="fas fa-code" style="color:#fff;margin-right:8px"></i> See Code';
+  toggleViewBtn.classList.remove('btn-primary'); toggleViewBtn.classList.add('btn-info');
+  isCodeViewActive = false;
+}
+function toggleCodeView(){
+  if(!scrapedHTMLContent){ showToast('No Code Fetched','Please fetch a URL first.','warning'); return; }
+  if(!isCodeViewActive){
+    writeIframe(getCodeViewHTML(scrapedHTMLContent));
+    toggleViewBtn.innerHTML = '<i class="fas fa-play" style="color:#fff;margin-right:8px"></i> Run Code';
+    toggleViewBtn.classList.remove('btn-info'); toggleViewBtn.classList.add('btn-primary');
+    isCodeViewActive = true;
+  } else {
+    runCodeInIframe(scrapedHTMLContent);
+    toggleViewBtn.innerHTML = '<i class="fas fa-code" style="color:#fff;margin-right:8px"></i> See Code';
+    toggleViewBtn.classList.remove('btn-primary'); toggleViewBtn.classList.add('btn-info');
+  }
+}
+function normalizeURL(u){
+  u = u.trim();
+  if(!/^https?:\/\//i.test(u)) u = 'https://' + u;
+  return u;
+}
+function isValidURL(url){ try{ new URL(url); return true; }catch(e){ return false; } }
+async function fetchWithProxy(url){
+  const proxies = [
+    'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
+    'https://corsproxy.io/?' + encodeURIComponent(url),
+    url
+  ];
+  let lastErr = null;
+  for(const p of proxies){
+    try{
+      const r = await fetch(p);
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      const t = await r.text();
+      if(t) return t;
+    }catch(e){ lastErr = e; }
+  }
+  throw new Error(lastErr ? lastErr.message : 'All fetch attempts failed.');
+}
+async function fetchSourceCode(){
+  let url = normalizeURL(urlInput.value || '');
+  urlInput.value = url;
+  if(!isValidURL(url)){ showToast('Action Required','Enter a valid URL to start viewing!','warning'); return; }
+  showModal();
+  document.getElementById('modalUrl').textContent = url;
+  scrapedHTMLContent = '';
+  writeIframe(loadingAnimationHTML(url));
+  toggleViewBtn.innerHTML = '<i class="fas fa-code" style="color:#fff;margin-right:8px"></i> See Code';
+  toggleViewBtn.classList.remove('btn-primary'); toggleViewBtn.classList.add('btn-info');
+  const t0 = performance.now();
+  try{
+    const htmlText = await fetchWithProxy(url);
+    if(!htmlText) throw new Error('Retrieved empty content.');
+    scrapedHTMLContent = htmlText;
+    runCodeInIframe(scrapedHTMLContent);
+    const secs = ((performance.now()-t0)/1000).toFixed(1);
+    document.getElementById('statsRow').style.display = 'flex';
+    document.getElementById('statSize').textContent = (new Blob([htmlText]).size/1024).toFixed(1) + ' KB';
+    document.getElementById('statLines').textContent = htmlText.split('\n').length.toLocaleString();
+    document.getElementById('statTime').textContent = secs + 's';
+    showToast('View Complete','Successfully fetched the live code.','success');
+  }catch(err){
+    runCodeInIframe(err.message, true);
+    showToast('Fetch Failed','Error fetching this URL.','error');
+  }
+}
+function fallbackCopy(text){
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  let ok = false;
+  try{ ok = document.execCommand('copy'); }catch(e){}
+  document.body.removeChild(ta);
+  return ok;
+}
+function copyOutput(){
+  const text = scrapedHTMLContent.trim();
+  if(!text){ showToast('Nothing to Copy','Fetch a URL first!','warning'); return; }
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('Code Copied!','The full HTML source is in your clipboard.','success');
+    }).catch(function(){
+      showToast(fallbackCopy(text) ? 'Code Copied!' : 'Copy Failed', fallbackCopy(text) ? 'Copied.' : 'Please copy manually.', fallbackCopy(text) ? 'success' : 'error');
+    });
+  } else {
+    const ok = fallbackCopy(text);
+    showToast(ok ? 'Code Copied!' : 'Copy Failed', ok ? 'The full HTML source is in your clipboard.' : 'Please copy manually.', ok ? 'success' : 'error');
+  }
+}
+function downloadCode(){
+  const text = scrapedHTMLContent.trim();
+  if(!text){ showToast('No Data to Download','Fetch a URL first!','warning'); return; }
+  const custom = document.getElementById('downloadFileName').value.trim();
+  let name = custom || 'Scraped_By_HASHIM.html';
+  if(!/\.html?$/i.test(name)) name += '.html';
+  try{
+    const blob = new Blob([text], {type:'text/html'});
+    const u = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = u; a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(u); }, 150);
+    showToast('Download Complete', name + ' is now in your downloads.','success');
+  }catch(e){ showToast('Download Error','Could not complete the file download.','error'); }
+}
+document.querySelectorAll('[data-q]').forEach(function(b){
+  b.addEventListener('click', function(){ urlInput.value = b.getAttribute('data-q'); fetchSourceCode(); });
+});
+urlInput.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); fetchSourceCode(); } });
+document.getElementById('previewModal').addEventListener('click', function(e){ if(e.target === this) hideModal(); });
+let channelPopupDismissed = false;
+function closeChannelPopup(){
+  channelPopupDismissed = true;
+  document.getElementById('channelPopup').classList.remove('show');
+}
+document.getElementById('channelPopup').addEventListener('click', function(e){ if(e.target === this) closeChannelPopup(); });
+document.addEventListener('DOMContentLoaded', function(){
+  runCodeInIframe(null);
+  setTimeout(function(){
+    if(!channelPopupDismissed) document.getElementById('channelPopup').classList.add('show');
+  }, 1500);
+});
+</script>
+<noscript><p style="text-align:center">This page requires JavaScript.</p></noscript>
+</body>
+</html>
